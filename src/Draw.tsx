@@ -1,80 +1,58 @@
-import { useState, useRef, Children, ReactNode } from "react";
-import { Stage, Layer, Line, Text } from "react-konva";
+import { useState, useRef } from "react";
+import { Stage, Layer, Line } from "react-konva";
 import { type KonvaEventObject } from "konva/lib/Node";
 import styled from "styled-components";
 
-const Draw = () => {
-  const [tool, setTool] = useState("pen");
-  const [lines, setLines] = useState([{ points: [0, 0], tool }]);
-  const isDrawing = useRef(false);
+type Data = {
+  id: string;
+  data: any;
+};
 
-  const handleMouseDown = (e: KonvaEventObject<Event>) => {
-    isDrawing.current = true;
-    const pos = e.target.getStage()?.getPointerPosition();
-    if (pos) {
-      setLines([...lines, { tool, points: [pos.x, pos.y] }]);
-    }
-  };
+type DrawProps = {
+  toolList: Array<Data>;
+  handleMouseDown: (event: KonvaEventObject<Event>) => void;
+  handleMouseMove: (event: KonvaEventObject<Event>) => void;
+  handleMouseUp: (event?: KonvaEventObject<Event>) => void;
+};
 
-  const handleMouseMove = (e: KonvaEventObject<Event>) => {
-    // no drawing - skipping
-    if (!isDrawing.current) {
-      return;
-    }
-    const point = e.target.getStage()?.getPointerPosition();
-    if (point) {
-      let lastLine = lines[lines.length - 1];
-      // add point
-      lastLine.points = lastLine.points.concat([point.x, point.y]);
-
-      // replace last
-      lines.splice(lines.length - 1, 1, lastLine);
-      setLines(lines.concat());
-    }
-  };
-
-  const handleMouseUp = () => {
-    isDrawing.current = false;
-  };
-
+const Draw = ({ toolList, handleMouseDown, handleMouseMove, handleMouseUp }: DrawProps) => {
   return (
-    <div>
-      <Wrapper>
-        <select
-          value={tool}
-          onChange={(e) => {
-            setTool(e.target.value);
-          }}
-        >
-          <option value="pen">Pen</option>
-          <option value="eraser">Eraser</option>
-        </select>
-      </Wrapper>
-      <Stage
-        width={window.innerWidth}
-        height={window.innerHeight}
-        onMouseDown={handleMouseDown}
-        onMousemove={handleMouseMove}
-        onMouseup={handleMouseUp}
-      >
-        <Layer>
-          {lines.map((line, i) => (
-            <Line
-              key={i}
-              points={line.points}
-              stroke="#df4b26"
-              strokeWidth={5}
-              tension={0.5}
-              lineCap="round"
-              lineJoin="round"
-              globalCompositeOperation={
-                line.tool === "eraser" ? "destination-out" : "source-over"
-              }
-            />
-          ))}
-        </Layer>
-      </Stage>
-    </div>
+    <Stage
+      width={window.innerWidth}
+      height={window.innerHeight}
+      onMouseDown={handleMouseDown}
+      onMousemove={handleMouseMove}
+      onMouseup={handleMouseUp}
+    >
+      {toolList.map(({ id, data }) => {
+        if (id === "Pen") {
+          return <Pen lines={data.lines} />;
+        }
+      })}
+    </Stage>
+  );
+};
+
+type PenProps = {
+  lines: any[];
+};
+
+const Pen = ({ lines }: PenProps) => {
+  return (
+    <Layer>
+      {lines.map((line, i) => (
+        <Line
+          key={i}
+          points={line.points}
+          stroke="#df4b26"
+          strokeWidth={5}
+          tension={0.5}
+          lineCap="round"
+          lineJoin="round"
+          globalCompositeOperation={line.tool === "eraser" ? "destination-out" : "source-over"}
+        />
+      ))}
+    </Layer>
   );
 };
 
